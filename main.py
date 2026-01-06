@@ -268,23 +268,33 @@ async def get_medicine_intelligence(request: MedicineSearchRequest):
         # Create the prompt
         prompt = MEDICAL_PROMPT_TEMPLATE.format(medicine_name=request.medicine_name.strip())
         
+        print(f"🔍 Requesting medicine intelligence for: {request.medicine_name.strip()}")
+        
         # Call OpenAI API
-        response = openai_client.chat.completions.create(
-            model="gpt-4o",  # Using GPT-4o-mini for cost efficiency, can use gpt-4o for better accuracy
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a medical information specialist. Provide accurate, concise, and structured information about medicines. Always format your response as valid JSON when possible."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            temperature=0.3,  # Lower temperature for more factual responses
-            max_tokens=2000,
-            response_format={"type": "json_object"}  # Request JSON response
-        )
+        try:
+            response = openai_client.chat.completions.create(
+                model="gpt-4o",  # Using GPT-4o for better accuracy
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a medical information specialist. Provide accurate, concise, and structured information about medicines. Always format your response as valid JSON when possible."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                temperature=0.3,  # Lower temperature for more factual responses
+                max_tokens=2000,
+                response_format={"type": "json_object"}  # Request JSON response
+            )
+            print(f"✅ OpenAI API call successful")
+        except Exception as openai_error:
+            print(f"❌ OpenAI API error: {type(openai_error).__name__}: {str(openai_error)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"OpenAI API error: {str(openai_error)}"
+            )
         
         # Extract response
         response_text = response.choices[0].message.content
@@ -330,6 +340,14 @@ async def get_medicine_intelligence(request: MedicineSearchRequest):
         )
         
     except Exception as e:
+        # Log the full error for debugging
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"❌ Error in medicine intelligence endpoint:")
+        print(f"   Error type: {type(e).__name__}")
+        print(f"   Error message: {str(e)}")
+        print(f"   Full traceback:\n{error_trace}")
+        
         raise HTTPException(
             status_code=500,
             detail=f"Error processing medicine intelligence: {str(e)}"
