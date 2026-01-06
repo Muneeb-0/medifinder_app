@@ -28,7 +28,11 @@ if not os.getenv("OPENAI_API_KEY") and env_path.exists():
 # Debug: Check if API key is loaded (remove in production)
 api_key = os.getenv("OPENAI_API_KEY")
 if api_key:
-    print(f"✅ OpenAI API key loaded successfully (length: {len(api_key)})")
+    # Strip whitespace for display
+    api_key_clean = api_key.strip()
+    print(f"✅ OpenAI API key loaded successfully (length: {len(api_key_clean)})")
+    if api_key != api_key_clean:
+        print(f"⚠️ WARNING: API key had trailing whitespace, it will be stripped automatically")
 else:
     print("⚠️ WARNING: OpenAI API key not found in environment variables")
     print(f"   Looking for .env file at: {env_path.absolute()}")
@@ -56,6 +60,8 @@ def get_openai_client():
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise ValueError("OPENAI_API_KEY not found in environment variables")
+    # Strip whitespace (newlines, spaces) from API key to prevent header errors
+    api_key = api_key.strip()
     return OpenAI(api_key=api_key)
 
 
